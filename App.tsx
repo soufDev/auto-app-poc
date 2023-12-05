@@ -6,9 +6,10 @@
  */
 
 import React, {useState} from 'react';
-import {SafeAreaView, StatusBar, useColorScheme} from 'react-native';
 
 import {NavigationContainer} from '@react-navigation/native';
+import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {
   Box,
   Button,
@@ -17,8 +18,46 @@ import {
   Spacer,
   Text,
 } from 'native-base';
-import {Colors} from 'react-native/Libraries/NewAppScreen';
+import {getAutoIdFromSeed} from './lib/did';
 
+type AppStackParamList = {
+  Home: undefined;
+  Chat: {autoId: string | bigint};
+};
+
+type AppStackScreenProps<T extends keyof AppStackParamList> =
+  NativeStackScreenProps<AppStackParamList, T>;
+
+const Stack = createNativeStackNavigator<AppStackParamList>();
+
+interface HomeScreenProps extends AppStackScreenProps<'Home'> {}
+const HomeScreen = ({navigation}: HomeScreenProps) => {
+  const onNavigate = () => {
+    const autoId = getAutoIdFromSeed('hello everyone');
+    navigation.navigate('Chat', {autoId});
+  };
+  return (
+    <Spacer
+      padding={4}
+      gap="2"
+      flex={1}
+      justifyContent="center"
+      alignItems="center"
+      width="full">
+      <Button width="full" backgroundColor="purple.600" onPress={onNavigate}>
+        Already registred
+      </Button>
+      <Button
+        width="full"
+        variant="outline"
+        borderColor="purple.600"
+        color="purple.600"
+        onPress={onNavigate}>
+        Register
+      </Button>
+    </Spacer>
+  );
+};
 const ChatScreen = () => {
   const [messages, setMessages] = useState<string[]>([]);
   const [message, setMessage] = useState<string>();
@@ -60,22 +99,19 @@ const ChatScreen = () => {
   );
 };
 function App(): JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
-
   return (
     <NavigationContainer>
       <NativeBaseProvider>
-        <SafeAreaView style={backgroundStyle}>
-          <StatusBar
-            barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-            backgroundColor={backgroundStyle.backgroundColor}
-          />
-          <ChatScreen />
-        </SafeAreaView>
+        {/* <SafeAreaView style={backgroundStyle}> */}
+        <Stack.Navigator
+          initialRouteName="Home"
+          screenOptions={{
+            headerShown: false,
+          }}>
+          <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="Chat" component={ChatScreen} />
+        </Stack.Navigator>
+        {/* </SafeAreaView> */}
       </NativeBaseProvider>
     </NavigationContainer>
   );
