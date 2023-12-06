@@ -1,6 +1,8 @@
 /**
  * DID module
  */
+import 'react-native-get-random-values';
+import '@ethersproject/shims';
 
 import {Identity} from '@semaphore-protocol/identity';
 

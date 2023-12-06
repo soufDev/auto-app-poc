@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import '@ethersproject/shims';
+import 'react-native-get-random-values';
 
 import {Keyring} from '@polkadot/api';
 import {mnemonicGenerate} from '@polkadot/util-crypto';
@@ -42,13 +44,21 @@ async function checkIfAutoIdExistsOnChain(
  * @param numOfAddresses - The number of addresses to generate.
  * @returns An array of generated Ethereum addresses.
  */
-export function generateEvmAddressesFromSeed(
+
+const deferAsyncTask = <T>(task: () => T) => {
+  return new Promise(resolve => {
+    setImmediate(() => resolve(task()));
+  });
+};
+export async function generateEvmAddressesFromSeed(
   seedPhrase: string,
   numOfAddresses: number,
-): string[] {
+): Promise<string[]> {
   const addresses: string[] = [];
-  const mnemonic = Mnemonic.fromPhrase(seedPhrase); // Convert the seed phrase to mnemonic
-  const masterNode = ethers.HDNodeWallet.fromMnemonic(mnemonic); // Create a master node from the seed phrase
+  const mnemonic = await deferAsyncTask(() => Mnemonic.fromPhrase(seedPhrase)); // Convert the seed phrase to mnemonic
+  const masterNode = (await deferAsyncTask(() =>
+    ethers.HDNodeWallet.fromMnemonic(mnemonic as Mnemonic),
+  )) as ethers.HDNodeWallet; // Create a master node from the seed phrase
 
   for (let i = 0; i < numOfAddresses; i++) {
     const path = `m/44'/60'/0'/0/${i}`; // Standard Ethereum derivation path according to BIP-44
@@ -79,7 +89,7 @@ function generateSubspaceAddress(seedPhrase: string): string {
 /**
  * Represents an AutoWallet object.
  */
-interface AutoWallet {
+export interface AutoWallet {
   subspaceAddress: string;
   evmAddresses: string[];
   autoId: string | bigint;
@@ -126,7 +136,10 @@ export async function generateAutoWallet(
   const subspaceAddress = generateSubspaceAddress(seedPhrase);
 
   // Get the EVM addresses from the seed phrase (BIP-32)
-  const evmAddresses = generateEvmAddressesFromSeed(seedPhrase, numOfEvmChains);
+  const evmAddresses = await generateEvmAddressesFromSeed(
+    seedPhrase,
+    numOfEvmChains,
+  );
 
   return {subspaceAddress, evmAddresses, autoId};
 }
