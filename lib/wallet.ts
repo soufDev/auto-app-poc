@@ -47,13 +47,14 @@ async function checkIfAutoIdExistsOnChain(
 
 const deferAsyncTask = <T>(task: () => T) => {
   return new Promise(resolve => {
-    setImmediate(() => resolve(task()));
+    setTimeout(() => resolve(task()));
   });
 };
 export async function generateEvmAddressesFromSeed(
   seedPhrase: string,
   numOfAddresses: number,
 ): Promise<string[]> {
+  console.log('seedPhrase', {seedPhrase});
   const addresses: string[] = [];
   const mnemonic = await deferAsyncTask(() => Mnemonic.fromPhrase(seedPhrase)); // Convert the seed phrase to mnemonic
   const masterNode = (await deferAsyncTask(() =>
@@ -113,7 +114,7 @@ export async function generateAutoWallet(
   // Loop until a valid Auto ID is generated
   while (true) {
     // Generate a new random seed phrase
-    seedPhrase = mnemonicGenerate();
+    seedPhrase = (await deferAsyncTask(mnemonicGenerate)) as string;
 
     // TODO: Check for a valid Auto ID
     const isAutoIdPreExist = await checkIfAutoIdExistsOnChain(
